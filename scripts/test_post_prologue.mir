@@ -1,0 +1,186 @@
+--- |
+  ; ModuleID = 'test_pre.mir'
+  source_filename = "test_boundary.c"
+  target datalayout = "e-m:e-p:16:16-i32:16-i64:16-f32:16-f64:16-a:8-n8:16-S16"
+  target triple = "msp430"
+  
+  ; Function Attrs: noinline nounwind optnone
+  define dso_local i16 @test_function(i16 noundef %a, i16 noundef %b) #0 {
+  entry:
+    %a.addr = alloca i16, align 2
+    %b.addr = alloca i16, align 2
+    store i16 %a, ptr %a.addr, align 2
+    store i16 %b, ptr %b.addr, align 2
+    %0 = load i16, ptr %a.addr, align 2
+    %1 = load i16, ptr %b.addr, align 2
+    %add = add nsw i16 %0, %1
+    ret i16 %add
+  }
+  
+  ; Function Attrs: noinline nounwind optnone
+  define dso_local i16 @main() #0 {
+  entry:
+    %retval = alloca i16, align 2
+    %result = alloca i16, align 2
+    store i16 0, ptr %retval, align 2
+    %call = call i16 @test_function(i16 noundef 5, i16 noundef 10)
+    store i16 %call, ptr %result, align 2
+    %0 = load i16, ptr %result, align 2
+    ret i16 %0
+  }
+  
+  attributes #0 = { noinline nounwind optnone "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+  
+  !llvm.module.flags = !{!0}
+  !llvm.ident = !{!1}
+  
+  !0 = !{i32 1, !"wchar_size", i32 2}
+  !1 = !{!"clang version 22.0.0git (git@github.com:llvm/llvm-project.git 7e55a4c9937dfc2184636ad7f3c9f7eccfad6186)"}
+...
+---
+name:            test_function
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       4
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: a.addr, type: default, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+  - { id: 1, name: b.addr, type: default, offset: -6, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13
+  
+    $sp = frame-setup SUB16ri $sp, 4, implicit-def dead $sr
+    frame-setup CFI_INSTRUCTION def_cfa_offset 6
+    MOV16mr $sp, 2, killed $r12 :: (store (s16) into %ir.a.addr)
+    MOV16mr $sp, 0, killed $r13 :: (store (s16) into %ir.b.addr)
+    $r12 = MOV16rm $sp, 2 :: (dereferenceable load (s16) from %ir.a.addr)
+    $r13 = MOV16rm $sp, 0 :: (dereferenceable load (s16) from %ir.b.addr)
+    $r12 = nsw ADD16rr killed $r12, killed $r13, implicit-def dead $sr
+    $sp = frame-destroy ADD16ri $sp, 4, implicit-def dead $sr
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    RET implicit $r12
+...
+---
+name:            main
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:         []
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       4
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    true
+  hasCalls:        true
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: retval, type: default, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+  - { id: 1, name: result, type: default, offset: -6, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    $sp = frame-setup SUB16ri $sp, 4, implicit-def dead $sr
+    frame-setup CFI_INSTRUCTION def_cfa_offset 6
+    MOV16mc $sp, 2, 0 :: (store (s16) into %ir.retval)
+    $r12 = MOV16ri 5
+    $r13 = MOV16ri 10
+    CALLi @test_function, implicit-def dead $r11, implicit-def $r12, implicit-def dead $r13, implicit-def dead $r14, implicit-def dead $r15, implicit-def dead $sr, implicit $sp, implicit $r12, implicit killed $r13
+    MOV16mr $sp, 0, killed $r12 :: (store (s16) into %ir.result)
+    $r12 = MOV16rm $sp, 0 :: (dereferenceable load (s16) from %ir.result)
+    $sp = frame-destroy ADD16ri $sp, 4, implicit-def dead $sr
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    RET implicit $r12
+...

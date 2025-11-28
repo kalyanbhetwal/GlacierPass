@@ -3,6 +3,10 @@ source_filename = "test_discard.c"
 target datalayout = "e-m:e-p:16:16-i32:16-i64:16-f32:16-f64:16-a:8-n8:16-S16"
 target triple = "msp430"
 
+@.str = private unnamed_addr constant [8 x i8] c"discard\00", section "llvm.metadata"
+@.str.1 = private unnamed_addr constant [15 x i8] c"test_discard.c\00", section "llvm.metadata"
+@llvm.global.annotations = appending global [2 x { ptr, ptr, ptr, i32, ptr }] [{ ptr, ptr, ptr, i32, ptr } { ptr @discard_func, ptr @.str, ptr @.str.1, i32 3, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_func2, ptr @.str, ptr @.str.1, i32 19, ptr null }], section "llvm.metadata"
+
 ; Function Attrs: noinline nounwind optnone
 define dso_local i16 @discard_func(i16 noundef %a, i16 noundef %b) #0 #1 {
 entry:

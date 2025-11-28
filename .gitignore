@@ -1,0 +1,10 @@
+.c*
+docs
+generated-assembly
+generated-mir
+ORGANIZATION.md
+PIPELINE_GUIDE.md
+QUICK_PIPELINE.md
+PIPELINE_GUIDE.md
+QUICK_PIPELINE.txt
+llvm-pass-skeleton/.cache

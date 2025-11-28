@@ -9,6 +9,7 @@ add_definitions(${LLVM_DEFINITIONS})
 add_llvm_pass_plugin(SkeletonPass
     # List your source files here.
     Skeleton.cpp
+    PrologueBoundary.cpp
 )
 
 # This line makes sure the pass links against the required LLVM components
