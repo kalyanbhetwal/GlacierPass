@@ -1,0 +1,1181 @@
+--- |
+  ; ModuleID = 'test_after_regalloc.mir'
+  source_filename = "test_prologue_boundary.c"
+  target datalayout = "e-m:e-p:16:16-i32:16-i64:16-f32:16-f64:16-a:8-n8:16-S16"
+  target triple = "msp430"
+  
+  @.str = private unnamed_addr constant [8 x i8] c"discard\00", section "llvm.metadata"
+  @.str.1 = private unnamed_addr constant [25 x i8] c"test_prologue_boundary.c\00", section "llvm.metadata"
+  @.str.2 = private unnamed_addr constant [10 x i8] c"immediate\00", section "llvm.metadata"
+  @llvm.global.annotations = appending global [9 x { ptr, ptr, ptr, i32, ptr }] [{ ptr, ptr, ptr, i32, ptr } { ptr @discard_no_locals, ptr @.str, ptr @.str.1, i32 71, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_with_locals, ptr @.str, ptr @.str.1, i32 80, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_with_array, ptr @.str, ptr @.str.1, i32 92, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_no_locals, ptr @.str.2, ptr @.str.1, i32 109, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_with_locals, ptr @.str.2, ptr @.str.1, i32 118, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_with_array, ptr @.str.2, ptr @.str.1, i32 129, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_multiple_returns, ptr @.str.2, ptr @.str.1, i32 143, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_calls_immediate, ptr @.str, ptr @.str.1, i32 170, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_calls_normal, ptr @.str.2, ptr @.str.1, i32 179, ptr null }], section "llvm.metadata"
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local i16 @normal_no_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
+  entry:
+    %add = add nsw i16 %b, %a
+    ret i16 %add
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local i16 @normal_with_small_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
+  entry:
+    %mul = shl nsw i16 %a, 1
+    %mul1 = mul nsw i16 %b, 3
+    %add = add nsw i16 %mul1, %mul
+    ret i16 %add
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local range(i16 -32763, -32768) i16 @normal_with_large_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
+  entry:
+    %add = add nsw i16 %b, %a
+    %add1.5 = add nsw i16 %add, 5
+    ret i16 %add1.5
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local range(i16 -32758, -32768) i16 @normal_with_call(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
+  entry:
+    %add.i = add i16 %a, 10
+    %add = add i16 %add.i, %b
+    ret i16 %add
+  }
+  
+  define dso_local i16 @discard_no_locals(i16 noundef %a, i16 noundef %b) #1 {
+  entry:
+    %add = add nsw i16 %b, %a
+    ret i16 %add
+  }
+  
+  define dso_local i16 @discard_with_locals(i16 noundef %a, i16 noundef %b) #1 {
+  entry:
+    %mul = shl nsw i16 %a, 1
+    %mul1 = mul nsw i16 %b, 3
+    %add = add nsw i16 %mul1, %mul
+    ret i16 %add
+  }
+  
+  define dso_local range(i16 -32766, -32768) i16 @discard_with_array(i16 noundef %a) #1 {
+  entry:
+    %add.2 = add nsw i16 %a, 2
+    ret i16 %add.2
+  }
+  
+  define dso_local i16 @immediate_no_locals(i16 noundef %a, i16 noundef %b) #2 {
+  entry:
+    %sub = sub nsw i16 %a, %b
+    ret i16 %sub
+  }
+  
+  define dso_local i16 @immediate_with_locals(i16 noundef %a, i16 noundef %b) #2 {
+  entry:
+    %shl = shl i16 %a, 1
+    %shr = ashr i16 %b, 1
+    %add = add nsw i16 %shr, %shl
+    ret i16 %add
+  }
+  
+  define dso_local i16 @immediate_with_array(i16 noundef %x) #2 {
+  entry:
+    %mul.7 = mul nsw i16 %x, 7
+    ret i16 %mul.7
+  }
+  
+  define dso_local range(i16 -32767, -32768) i16 @immediate_multiple_returns(i16 noundef %a, i16 noundef %b) #2 {
+  entry:
+    %cmp = icmp sgt i16 %a, %b
+    %cmp1 = icmp slt i16 %a, %b
+    %b. = select i1 %cmp1, i16 %b, i16 0
+    %retval.0 = select i1 %cmp, i16 %a, i16 %b.
+    ret i16 %retval.0
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local range(i16 1, 0) i16 @normal_calls_discard(i16 noundef %a) local_unnamed_addr #0 {
+  entry:
+    %reass.add = shl i16 %a, 1
+    %add.i = or disjoint i16 %reass.add, 1
+    ret i16 %add.i
+  }
+  
+  define dso_local noundef i16 @discard_calls_immediate(i16 %a) #1 {
+  entry:
+    ret i16 1
+  }
+  
+  define dso_local range(i16 2, 1) i16 @immediate_calls_normal(i16 noundef %a) #2 {
+  entry:
+    %reass.add = shl i16 %a, 1
+    %add.i = add i16 %reass.add, 2
+    ret i16 %add.i
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+  define dso_local noundef i16 @main() local_unnamed_addr #0 {
+  entry:
+    ret i16 431
+  }
+  
+  attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="msp430" }
+  attributes #1 = { "discard" "target-cpu"="msp430" }
+  attributes #2 = { "immediate" "target-cpu"="msp430" }
+  
+  !llvm.module.flags = !{!0}
+  !llvm.ident = !{!1}
+  
+  !0 = !{i32 1, !"wchar_size", i32 2}
+  !1 = !{!"clang version 22.0.0git (git@github.com:llvm/llvm-project.git 7e55a4c9937dfc2184636ad7f3c9f7eccfad6186)"}
+...
+---
+name:            normal_no_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r10 = nsw ADD16rr killed $r10, killed $r11, implicit-def dead $sr
+    $r12 = COPY killed $r10
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            normal_with_small_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    true
+  hasCalls:        true
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r12 = COPY killed $r11
+    $r13 = MOV16ri 3
+    CALLi &__mspabi_mpyi, implicit-def dead $r11, implicit-def $r12, implicit-def dead $r13, implicit-def dead $r14, implicit-def dead $r15, implicit-def dead $sr, implicit $sp, implicit $r12, implicit $r13
+    $r11 = COPY $r12
+    $r10 = ADD16rr killed $r10, $r10, implicit-def dead $sr
+    $r11 = nsw ADD16rr killed $r11, killed $r10, implicit-def dead $sr
+    $r12 = COPY killed $r11
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            normal_with_large_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r10 = nsw ADD16rr killed $r10, killed $r11, implicit-def dead $sr
+    $r10 = nsw ADD16ri killed $r10, 5, implicit-def dead $sr
+    $r12 = COPY killed $r10
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            normal_with_call
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r10 = ADD16rr killed $r10, killed $r11, implicit-def dead $sr
+    $r10 = ADD16ri killed $r10, 10, implicit-def dead $sr
+    $r12 = COPY killed $r10
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            discard_no_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13
+  
+    $r12 = nsw ADD16rr killed $r12, killed $r13, implicit-def dead $sr
+    RET implicit $r12
+...
+---
+name:            discard_with_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    true
+  hasCalls:        true
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13
+  
+    $sp = frame-setup SUB16ri $sp, 2, implicit-def dead $sr
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    MOV16mr $sp, 0, $r12 :: (store (s16) into %stack.0)
+    $r12 = COPY killed $r13
+    $r13 = MOV16ri 3
+    CALLi &__mspabi_mpyi, implicit-def dead $r11, implicit-def $r12, implicit-def dead $r13, implicit-def dead $r14, implicit-def dead $r15, implicit-def dead $sr, implicit $sp, implicit $r12, implicit $r13
+    $r13 = MOV16rm $sp, 0 :: (load (s16) from %stack.0)
+    $r13 = ADD16rr killed $r13, $r13, implicit-def dead $sr
+    MOV16mr $sp, 0, killed $r13 :: (store (s16) into %stack.0)
+    $r13 = MOV16rm $sp, 0 :: (load (s16) from %stack.0)
+    $r12 = nsw ADD16rr killed $r12, killed $r13, implicit-def dead $sr
+    $sp = frame-destroy ADD16ri $sp, 2, implicit-def dead $sr
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    RET implicit $r12
+...
+---
+name:            discard_with_array
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12
+  
+    $r12 = nsw ADD16rc killed $r12, 2, implicit-def dead $sr
+    RET implicit $r12
+...
+---
+name:            immediate_no_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r10 = nsw SUB16rr killed $r10, killed $r11, implicit-def dead $sr
+    $r12 = COPY killed $r10
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            immediate_with_locals
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       2
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12, $r13, $r10
+  
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    CFI_INSTRUCTION offset $r10, -4
+    $r11 = COPY $r13
+    $r10 = COPY $r12
+    $r10 = ADD16rr killed $r10, $r10, implicit-def dead $sr
+    $r11 = RRA16r killed $r11, implicit-def dead $sr
+    $r10 = nsw ADD16rr killed $r10, killed $r11, implicit-def dead $sr
+    $r12 = COPY killed $r10
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            immediate_with_array
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    true
+  hasCalls:        true
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12
+  
+    $r13 = MOV16ri 7
+    CALLi &__mspabi_mpyi, implicit-def dead $r11, implicit-def $r12, implicit-def dead $r13, implicit-def dead $r14, implicit-def dead $r15, implicit-def dead $sr, implicit $sp, implicit $r12, implicit killed $r13
+    RET implicit $r12
+...
+---
+name:            immediate_multiple_returns
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+  - { reg: '$r13', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       4
+  offsetAdjustment: 0
+  maxAlignment:    2
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:
+  - { id: 0, name: '', type: spill-slot, offset: -4, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r9', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+  - { id: 1, name: '', type: spill-slot, offset: -6, size: 2, alignment: 2, 
+      stack-id: default, callee-saved-register: '$r10', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    successors: %bb.1(0x40000000), %bb.2(0x40000000)
+    liveins: $r12, $r13, $r9, $r10
+  
+    frame-setup PUSH16r killed $r9, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 4
+    frame-setup PUSH16r killed $r10, implicit-def $sp, implicit $sp
+    frame-setup CFI_INSTRUCTION def_cfa_offset 6
+    CFI_INSTRUCTION offset $r9, -4
+    CFI_INSTRUCTION offset $r10, -6
+    $r11 = COPY $r13
+    $r9 = COPY $r12
+    CMP16rr $r9, $r11, implicit-def $sr
+    $r10 = COPY $r11
+    JCC %bb.2, 5, implicit $sr
+  
+  bb.1.entry:
+    successors: %bb.2(0x80000000)
+    liveins: $r9, $r11
+  
+    $r10 = MOV16rc 0
+  
+  bb.2.entry:
+    successors: %bb.3(0x40000000), %bb.4(0x40000000)
+    liveins: $r9, $r10, $r11
+  
+    CMP16rr killed $r11, $r9, implicit-def $sr
+    JCC %bb.4, 5, implicit $sr
+  
+  bb.3.entry:
+    successors: %bb.4(0x80000000)
+    liveins: $r10
+  
+    $r9 = COPY killed $r10
+  
+  bb.4.entry:
+    liveins: $r9
+  
+    $r12 = COPY killed $r9
+    $r10 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 4
+    $r9 = frame-destroy POP16r implicit-def $sp, implicit $sp
+    frame-destroy CFI_INSTRUCTION def_cfa_offset 2
+    CFI_INSTRUCTION restore $r9
+    CFI_INSTRUCTION restore $r10
+    RET implicit $r12
+...
+---
+name:            normal_calls_discard
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12
+  
+    $r11 = COPY $r12
+    $r11 = ADD16rr killed $r11, $r11, implicit-def dead $sr
+    $r11 = disjoint BIS16rc killed $r11, 1, implicit-def dead $sr
+    $r12 = COPY killed $r11
+    RET implicit $r12
+...
+---
+name:            discard_calls_immediate
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:         []
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    $r12 = MOV16rc 1
+    RET implicit killed $r12
+...
+---
+name:            immediate_calls_normal
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:
+  - { reg: '$r12', virtual-reg: '' }
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r12
+  
+    $r11 = COPY $r12
+    $r11 = ADD16rr killed $r11, $r11, implicit-def dead $sr
+    $r11 = ADD16rc killed $r11, 2, implicit-def dead $sr
+    $r12 = COPY killed $r11
+    RET implicit $r12
+...
+---
+name:            main
+alignment:       2
+exposesReturnsTwice: false
+legalized:       false
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          true
+isSSA:           false
+noVRegs:         true
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHContTarget: false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: true
+registers:       []
+liveins:         []
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 0
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: true
+  localFrameSize:  0
+fixedStack:      []
+stack:           []
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    $r12 = MOV16ri 431
+    RET implicit killed $r12
+...

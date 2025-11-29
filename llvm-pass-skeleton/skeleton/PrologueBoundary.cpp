@@ -1,6 +1,70 @@
+//===----------------------------------------------------------------------===//
+//
+// Prologue Boundary Insertion Pass
+//
+// This pass inserts task-specific boundary markers and stack size information
+// at the beginning of each function for runtime stack tracking and task
+// identification.
+//
+//===----------------------------------------------------------------------===//
+//
+// OVERVIEW:
+// ---------
+// This pass instruments MSP430 functions by inserting boundary markers and
+// stack size metadata at function entry and cleanup code at function exit.
+// The boundary values identify different task types (discard, immediate, normal).
+//
+// TASK TYPES AND BOUNDARY VALUES:
+// --------------------------------
+// - discard:   0xDEAD - Functions marked with "discard" attribute
+// - immediate: 0xCAFE - Functions marked with "immediate" attribute
+// - normal:    0xBEEF - All other functions (default)
+//
+// STACK LAYOUT AFTER INSTRUMENTATION:
+// ------------------------------------
+// Prologue (entry):
+//   1. PUSH #<boundary_value>             (2 bytes on stack)
+//   2. PUSH #<stack_size>                 (2 bytes on stack)
+//
+//   Total added to stack: 4 bytes
+//
+// Epilogue (before return):
+//   1. ADD #4, SP                         (remove boundary + stack_size)
+//
+// STACK SIZE INFORMATION:
+// -----------------------
+// The stack size is obtained from MachineFrameInfo::getStackSize() and includes:
+//   - Local variables (compile-time known sizes)
+//   - Spilled registers (from register allocation)
+//   - Saved callee-saved registers
+//   - Alignment padding
+//
+// The stack size does NOT include:
+//   - The 4 bytes added by this pass (boundary + stack_size)
+//   - Dynamic allocations (alloca, VLAs)
+//   - Stack usage from nested function calls
+//
+// EXAMPLE GENERATED CODE:
+// -----------------------
+// For a function with "immediate" attribute and stack size of 8 bytes:
+//
+//   myFunction:
+//       ; Inserted by this pass:
+//       PUSH #0xCAFE        ; Boundary marker for immediate task
+//       PUSH #8             ; Stack size (does not include the 4 bytes we add)
+//
+//       ; Original function prologue and body...
+//
+//       ; Inserted by this pass before return:
+//       ADD #4, SP          ; Remove boundary and stack_size from stack
+//       RET
+//
+//===----------------------------------------------------------------------===//
+
 #include <llvm/CodeGen/MachineFunction.h>
 #include <llvm/CodeGen/MachineFunctionPass.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
+#include <llvm/CodeGen/MachineFrameInfo.h>
 #include <llvm/CodeGen/TargetInstrInfo.h>
 #include <llvm/CodeGen/TargetRegisterInfo.h>
 #include <llvm/CodeGen/TargetSubtargetInfo.h>
@@ -11,8 +75,9 @@ using namespace llvm;
 
 namespace {
 
-/// A machine function pass that inserts a custom boundary marker
-/// at the beginning of each function before any prologue code
+/// A machine function pass that inserts custom boundary markers and stack size
+/// information at the beginning of each function for task identification and
+/// stack tracking purposes.
 class PrologueBoundaryPass : public MachineFunctionPass {
 public:
     static char ID;
@@ -24,129 +89,123 @@ public:
     }
 
     bool runOnMachineFunction(MachineFunction &MF) override {
-        // Skip functions with "discard" attribute - they handle their own boundaries
         const Function &F = MF.getFunction();
-        if (F.hasFnAttribute("discard")) {
-            outs() << "Skipping prologue boundary for discard function: " << MF.getName() << "\n";
-            return false;
-        }
-
         const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
         bool Modified = false;
 
-        // Boundary value for normal functions
-        const uint16_t NORMAL_BOUNDARY = 0xBEEF;
+        // Boundary values for different task types
+        // These are pushed onto the stack and can be used at runtime to identify
+        // the task type and track stack usage.
+        const uint16_t NORMAL_BOUNDARY = 0xBEEF;      // Default functions
+        const uint16_t IMMEDIATE_BOUNDARY = 0xCAFE;   // "immediate" attribute
+        const uint16_t DISCARD_BOUNDARY = 0xDEAD;     // "discard" attribute
+
+        // Determine which boundary to use based on function attribute
+        bool isDiscard = F.hasFnAttribute("discard");
+        bool isImmediate = F.hasFnAttribute("immediate");
+
+        uint16_t boundaryValue;
+        const char* taskType;
+
+        if (isDiscard) {
+            boundaryValue = DISCARD_BOUNDARY;
+            taskType = "discard";
+        } else if (isImmediate) {
+            boundaryValue = IMMEDIATE_BOUNDARY;
+            taskType = "immediate";
+        } else {
+            boundaryValue = NORMAL_BOUNDARY;
+            taskType = "normal";
+        }
 
         // ============================================================
-        // PART 1: Insert ANNOTATION_LABEL at the beginning (before prologue)
+        // PART 1: Insert boundary marker and stack size at the beginning
         // ============================================================
         MachineBasicBlock &EntryMBB = MF.front();
-        MachineBasicBlock::iterator InsertPos = EntryMBB.begin();
+
+        // Find the first non-FrameSetup instruction to insert BEFORE all frame setup
+        // This ensures our boundary is truly at the top of the function
+        auto InsertPos = EntryMBB.begin();
+
+        // Skip any existing FrameSetup instructions and insert at the very beginning
+        // We want to insert before the standard prologue
+        InsertPos = EntryMBB.begin();
 
         DebugLoc DL;
         if (InsertPos != EntryMBB.end()) {
             DL = InsertPos->getDebugLoc();
         }
 
-        // Insert ANNOTATION_LABEL with normal boundary value at the very beginning
-        BuildMI(EntryMBB, InsertPos, DL, TII->get(TargetOpcode::ANNOTATION_LABEL))
-            .addImm(NORMAL_BOUNDARY)
-            .setMIFlag(MachineInstr::FrameSetup);
-
-        // Get the PUSH16i and PUSH16r opcodes
-        unsigned PushImmOpcode = 0, PushRegOpcode = 0;
+        // Get the PUSH16i opcode
+        unsigned PushImmOpcode = 0;
         for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
             StringRef Name = TII->getName(i);
             if (Name == "PUSH16i") {
                 PushImmOpcode = i;
-            } else if (Name == "PUSH16r") {
-                PushRegOpcode = i;
-            }
-        }
-
-        // Get R4 register
-        const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
-        unsigned R4Reg = 0;
-        for (unsigned Reg = 1; Reg < TRI->getNumRegs(); ++Reg) {
-            if (TRI->getName(Reg) == StringRef("R4")) {
-                R4Reg = Reg;
                 break;
             }
         }
 
+        // Get the stack pointer register
+        // For MSP430, SP is R1 - we need to find it by name or use the known register number
+        const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
+        unsigned SPReg = 0;
+
+        // Try to find SP by iterating through all registers
+        for (unsigned Reg = 1; Reg < TRI->getNumRegs(); ++Reg) {
+            const char* RegName = TRI->getName(Reg);
+            // Check for SP, R1, or r1
+            if (RegName && (strcmp(RegName, "SP") == 0 || strcmp(RegName, "R1") == 0 || strcmp(RegName, "r1") == 0)) {
+                SPReg = Reg;
+                outs() << "Found stack pointer register: " << RegName << " (" << Reg << ")\n";
+                break;
+            }
+        }
+
+        if (!SPReg) {
+            outs() << "Warning: Could not get stack pointer register\n";
+            return Modified;
+        }
+
         if (PushImmOpcode) {
-            // Push the normal boundary value onto the stack
+            // Push the appropriate boundary value onto the stack
             BuildMI(EntryMBB, InsertPos, DL, TII->get(PushImmOpcode))
-                .addImm(NORMAL_BOUNDARY)
+                .addImm(boundaryValue)
                 .setMIFlag(MachineInstr::FrameSetup);
 
-            outs() << "Inserted PUSH " << format("0x%04X", NORMAL_BOUNDARY)
-                   << " (" << NORMAL_BOUNDARY << ") for normal function: " << MF.getName() << "\n";
+            outs() << "Inserted PUSH " << format("0x%04X", boundaryValue)
+                   << " (" << boundaryValue << ") for " << taskType
+                   << " function: " << MF.getName() << "\n";
         } else {
             outs() << "Warning: PUSH16i not found, cannot push boundary value\n";
         }
 
-        // Push R4 to save it
-        if (PushRegOpcode && R4Reg) {
-            BuildMI(EntryMBB, InsertPos, DL, TII->get(PushRegOpcode))
-                .addReg(R4Reg)
+        // Get stack size and push it
+        // NOTE: This stack size is the statically-determined frame size and does NOT
+        // include the 4 bytes we're adding (boundary + stack_size itself).
+        // It includes: local variables, spilled registers, saved registers, and padding.
+        const MachineFrameInfo &MFI = MF.getFrameInfo();
+        uint64_t stackSize = MFI.getStackSize();
+
+        if (PushImmOpcode) {
+            // Push the stack size onto the stack
+            // This allows runtime code to know how much stack this function allocated
+            BuildMI(EntryMBB, InsertPos, DL, TII->get(PushImmOpcode))
+                .addImm(stackSize)
                 .setMIFlag(MachineInstr::FrameSetup);
 
-            outs() << "Inserted PUSH R4 for normal function: " << MF.getName() << "\n";
-        } else {
-            outs() << "Warning: PUSH16r or R4 not found\n";
+            outs() << "Inserted PUSH stack size (" << stackSize << ") for " << taskType
+                   << " function: " << MF.getName() << "\n";
         }
 
-        // Get MOV16rm opcode to load from memory
-        unsigned MovRmOpcode = 0;
-        for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
-            if (TII->getName(i) == "MOV16rm") {
-                MovRmOpcode = i;
-                break;
-            }
-        }
-
-        // Get the stack pointer register (R1/SP)
-        unsigned SPReg = 0;
-        for (unsigned Reg = 1; Reg < TRI->getNumRegs(); ++Reg) {
-            if (TRI->getName(Reg) == StringRef("R1")) {
-                SPReg = Reg;
-                break;
-            }
-        }
-
-        // Load return address from SP+6 into R4
-        // Stack layout at this point: [boundary][saved R4][return address] <- SP points here
-        // SP+0 is current top, SP+2 has saved R4, SP+4 has boundary, SP+6 has return address
-        if (MovRmOpcode && R4Reg && SPReg) {
-            BuildMI(EntryMBB, InsertPos, DL, TII->get(MovRmOpcode))
-                .addReg(R4Reg, RegState::Define)
-                .addReg(SPReg)
-                .addImm(6)  // Offset of 6 bytes from SP
-                .setMIFlag(MachineInstr::FrameSetup);
-
-            outs() << "Inserted MOV 6(SP), R4 to save return address for normal function: "
-                   << MF.getName() << "\n";
-        } else {
-            outs() << "Warning: MOV16rm, R4, or SP not found\n";
-        }
-
-        outs() << "Inserted prologue boundary (" << format("0x%04X", NORMAL_BOUNDARY)
-               << ") for normal function: " << MF.getName()
+        outs() << "Inserted prologue boundary (" << format("0x%04X", boundaryValue)
+               << ") for " << taskType << " function: " << MF.getName()
                << " at the beginning (before prologue)\n";
         Modified = true;
 
         // ============================================================
-        // PART 2: Insert POP R4 and adjust stack before each RET/RETI instruction
+        // PART 2: Adjust stack before each return instruction
         // ============================================================
-        // Get the actual opcodes by name (MSP430-specific)
-        unsigned RetOpcode = 0, RetiOpcode = 0;
-        for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
-            StringRef Name = TII->getName(i);
-            if (Name == "RET") RetOpcode = i;
-            if (Name == "RETI") RetiOpcode = i;
-        }
-
         // Get the ADD16ri opcode for stack pointer adjustment
         unsigned AddOpcode = 0;
         for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
@@ -156,43 +215,36 @@ public:
             }
         }
 
-        // Get POP16r opcode
-        unsigned PopRegOpcode = 0;
-        for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
-            if (TII->getName(i) == "POP16r") {
-                PopRegOpcode = i;
-                break;
-            }
-        }
-
-        if (!AddOpcode || !SPReg || !PopRegOpcode || !R4Reg) {
-            outs() << "Warning: Could not find ADD16ri, SP, POP16r, or R4 register\n";
+        if (!AddOpcode || !SPReg) {
+            outs() << "Warning: Could not find ADD16ri or SP register\n";
+            outs() << "  AddOpcode=" << AddOpcode << ", SPReg=" << SPReg << "\n";
             return Modified;
         }
+
+        outs() << "Found ADD16ri opcode: " << AddOpcode << "\n";
 
         // Iterate through all basic blocks
         for (MachineBasicBlock &MBB : MF) {
             // Look for return instructions
-            for (MachineBasicBlock::iterator I = MBB.begin(); I != MBB.end(); ++I) {
+            for (auto I = MBB.begin(); I != MBB.end(); ++I) {
                 MachineInstr &MI = *I;
 
-                // Check if this is a RET or RETI instruction
-                if (MI.getOpcode() == RetOpcode || MI.getOpcode() == RetiOpcode) {
+                // Check if this is a return instruction using the isReturn() method
+                if (MI.isReturn()) {
                     DebugLoc RetDL = MI.getDebugLoc();
 
-                    // First: Pop R4 to restore it
-                    BuildMI(MBB, I, RetDL, TII->get(PopRegOpcode))
-                        .addReg(R4Reg, RegState::Define)
-                        .setMIFlag(MachineInstr::FrameDestroy);
+                    outs() << "Found return instruction in " << MF.getName() << "\n";
 
-                    // Second: Insert ADD #2, SP to remove the boundary value from the stack
+                    // Insert ADD #4, SP to remove the stack_size and boundary value from the stack
+                    // Stack layout before epilogue: [boundary][stack_size][...] <- SP
+                    // We need to remove 2 bytes for stack_size + 2 bytes for boundary = 4 bytes
                     BuildMI(MBB, I, RetDL, TII->get(AddOpcode))
                         .addReg(SPReg, RegState::Define)
                         .addReg(SPReg)
-                        .addImm(2)
+                        .addImm(4)  // Remove 2 bytes for stack_size + 2 bytes for boundary
                         .setMIFlag(MachineInstr::FrameDestroy);
 
-                    outs() << "Inserted POP R4 and ADD #2, SP before return in function: "
+                    outs() << "Inserted ADD #4, SP before return in function: "
                            << MF.getName() << "\n";
                     Modified = true;
                 }

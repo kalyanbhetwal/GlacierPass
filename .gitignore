@@ -8,3 +8,4 @@ QUICK_PIPELINE.md
 PIPELINE_GUIDE.md
 QUICK_PIPELINE.txt
 llvm-pass-skeleton/.cache
+llvm-pass-skeleton/build/

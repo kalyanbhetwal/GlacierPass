@@ -966,6 +966,13 @@ skeleton/CMakeFiles/SkeletonPass.dir/PrologueBoundary.cpp.o: \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/IR/GlobalObject.h \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/IR/GlobalValue.h \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/IR/OperandTraits.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/CodeGen/MachineFrameInfo.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/CodeGen/TargetFrameLowering.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/CodeGen/MachineOptimizationRemarkEmitter.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/IR/DiagnosticInfo.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/Support/SourceMgr.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/Support/MemoryBuffer.h \
+  /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/Support/MemoryBufferRef.h \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/CodeGen/TargetInstrInfo.h \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/ADT/Uniformity.h \
   /Users/kb/Documents/myllvmfor-msp430/llvm-install/include/llvm/CodeGen/MIRFormatter.h \
