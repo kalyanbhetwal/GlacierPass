@@ -22,14 +22,22 @@
 //
 // STACK LAYOUT AFTER INSTRUMENTATION:
 // ------------------------------------
-// Prologue (entry):
-//   1. PUSH #<boundary_value>             (2 bytes on stack)
+// Prologue (entry) - Non-interrupt functions:
+//   1. PUSH #0                            (2-byte padding on stack)
+//   2. PUSH #<boundary_value>             (2 bytes on stack)
+//   3. PUSH #<stack_size>                 (2 bytes on stack)
+//
+//   Total added to stack: 6 bytes
+//
+// Prologue (entry) - Interrupt functions:
+//   1. PUSH #<boundary_value>             (2 bytes on stack, no padding)
 //   2. PUSH #<stack_size>                 (2 bytes on stack)
 //
 //   Total added to stack: 4 bytes
 //
 // Epilogue (before return):
-//   1. ADD #4, SP                         (remove boundary + stack_size)
+//   Non-interrupt: ADD #6, SP             (remove padding + boundary + stack_size)
+//   Interrupt:     ADD #4, SP             (remove boundary + stack_size)
 //
 // STACK SIZE INFORMATION:
 // -----------------------
@@ -46,18 +54,27 @@
 //
 // EXAMPLE GENERATED CODE:
 // -----------------------
-// For a function with "immediate" attribute and stack size of 8 bytes:
+// For a non-interrupt function with "immediate" attribute and stack size of 8 bytes:
 //
 //   myFunction:
 //       ; Inserted by this pass:
+//       PUSH #0             ; 2-byte padding on stack
 //       PUSH #0xCAFE        ; Boundary marker for immediate task
-//       PUSH #8             ; Stack size (does not include the 4 bytes we add)
+//       PUSH #8             ; Stack size (does not include the 6 bytes we add)
 //
 //       ; Original function prologue and body...
 //
 //       ; Inserted by this pass before return:
-//       ADD #4, SP          ; Remove boundary and stack_size from stack
+//       ADD #6, SP          ; Remove padding + boundary + stack_size from stack
 //       RET
+//
+// For an interrupt function, the padding is omitted:
+//   myISR:
+//       PUSH #0xCAFE        ; Boundary marker (no padding for interrupts)
+//       PUSH #8             ; Stack size
+//       ; ... function body ...
+//       ADD #4, SP          ; Remove boundary + stack_size from stack
+//       RETI
 //
 //===----------------------------------------------------------------------===//
 
@@ -136,7 +153,7 @@ public:
             DL = InsertPos->getDebugLoc();
         }
 
-        // Get the PUSH16i opcode
+        // Get the PUSH16i opcode for pushing immediate values
         unsigned PushImmOpcode = 0;
         for (unsigned i = 0; i < TII->getNumOpcodes(); ++i) {
             StringRef Name = TII->getName(i);
@@ -165,6 +182,20 @@ public:
         if (!SPReg) {
             outs() << "Warning: Could not get stack pointer register\n";
             return Modified;
+        }
+
+        // Check if this is an interrupt function
+        bool isInterrupt = F.hasFnAttribute("interrupt");
+
+        // Insert 2-byte padding on stack for non-interrupt functions
+        // Push #0 as padding
+        if (!isInterrupt && PushImmOpcode) {
+            BuildMI(EntryMBB, InsertPos, DL, TII->get(PushImmOpcode))
+                .addImm(0)  // Push 0 as padding
+                .setMIFlag(MachineInstr::FrameSetup);
+            outs() << "Inserted PUSH #0 padding on stack for non-interrupt function: "
+                   << MF.getName() << "\n";
+            Modified = true;
         }
 
         if (PushImmOpcode) {
@@ -223,6 +254,11 @@ public:
 
         outs() << "Found ADD16ri opcode: " << AddOpcode << "\n";
 
+        // Determine epilogue cleanup size based on interrupt status
+        // Non-interrupt: 6 bytes (2 padding + 2 boundary + 2 stack_size)
+        // Interrupt:     4 bytes (2 boundary + 2 stack_size)
+        unsigned epilogueCleanupSize = isInterrupt ? 4 : 6;
+
         // Iterate through all basic blocks
         for (MachineBasicBlock &MBB : MF) {
             // Look for return instructions
@@ -235,16 +271,15 @@ public:
 
                     outs() << "Found return instruction in " << MF.getName() << "\n";
 
-                    // Insert ADD #4, SP to remove the stack_size and boundary value from the stack
-                    // Stack layout before epilogue: [boundary][stack_size][...] <- SP
-                    // We need to remove 2 bytes for stack_size + 2 bytes for boundary = 4 bytes
+                    // Insert ADD #<epilogueCleanupSize>, SP to remove the padding (if non-interrupt),
+                    // boundary, and stack_size from the stack
                     BuildMI(MBB, I, RetDL, TII->get(AddOpcode))
                         .addReg(SPReg, RegState::Define)
                         .addReg(SPReg)
-                        .addImm(4)  // Remove 2 bytes for stack_size + 2 bytes for boundary
+                        .addImm(epilogueCleanupSize)
                         .setMIFlag(MachineInstr::FrameDestroy);
 
-                    outs() << "Inserted ADD #4, SP before return in function: "
+                    outs() << "Inserted ADD #" << epilogueCleanupSize << ", SP before return in function: "
                            << MF.getName() << "\n";
                     Modified = true;
                 }

@@ -181,6 +181,40 @@ int immediate_calls_normal(int a) {
 }
 
 // =============================================================================
+// INTERRUPT FUNCTIONS (No padding, ADD #4, SP)
+// =============================================================================
+
+/**
+ * Normal interrupt function
+ * Expected: PUSH #0xBEEF, PUSH #<stack_size> (no PUSH #0 padding)
+ *           ADD #4, SP (not #6)
+ */
+__attribute__((interrupt(2)))
+void isr_normal(void) {
+    volatile int x = 42;
+}
+
+/**
+ * Discard interrupt function
+ * Expected: PUSH #0xDEAD, PUSH #<stack_size> (no PUSH #0 padding)
+ *           ADD #4, SP (not #6)
+ */
+__attribute__((interrupt(3), annotate("discard")))
+void isr_discard(void) {
+    volatile int x = 100;
+}
+
+/**
+ * Immediate interrupt function
+ * Expected: PUSH #0xCAFE, PUSH #<stack_size> (no PUSH #0 padding)
+ *           ADD #4, SP (not #6)
+ */
+__attribute__((interrupt(4), annotate("immediate")))
+void isr_immediate(void) {
+    volatile int x = 200;
+}
+
+// =============================================================================
 // MAIN FUNCTION FOR TESTING
 // =============================================================================
 

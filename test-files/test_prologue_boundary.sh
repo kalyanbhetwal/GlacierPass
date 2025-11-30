@@ -43,21 +43,38 @@ fi
 # Step 2: Add attributes to IR (discard and immediate)
 echo -e "${YELLOW}Step 2: Adding function attributes to IR...${NC}"
 
-# Add discard attribute
+# Add discard attribute to non-ISR discard functions
 sed -i.bak 's/@discard_\([a-z_]*\)(\([^)]*\)) #[0-9]*/@discard_\1(\2) #99/g' "$LLVM_IR"
 sed -i.bak 's/@discard_\([a-z_]*\)(\([^)]*\)) {/@discard_\1(\2) #99 {/g' "$LLVM_IR"
 
-# Add immediate attribute
+# Add immediate attribute to non-ISR immediate functions
 sed -i.bak 's/@immediate_\([a-z_]*\)(\([^)]*\)) #[0-9]*/@immediate_\1(\2) #98/g' "$LLVM_IR"
 sed -i.bak 's/@immediate_\([a-z_]*\)(\([^)]*\)) {/@immediate_\1(\2) #98 {/g' "$LLVM_IR"
 
-# Append attribute definitions
+# Make ISR functions use the interrupt attributes #3 and #4
+# isr_discard uses #3 (interrupt="3")
+sed -i.bak 's/@isr_discard() #[0-9]*/@isr_discard() #3/g' "$LLVM_IR"
+sed -i.bak 's/@isr_discard() {/@isr_discard() #3 {/g' "$LLVM_IR"
+
+# isr_immediate uses #4 (interrupt="4")
+sed -i.bak 's/@isr_immediate() #[0-9]*/@isr_immediate() #4/g' "$LLVM_IR"
+sed -i.bak 's/@isr_immediate() {/@isr_immediate() #4 {/g' "$LLVM_IR"
+
+# Update ISR attribute definitions to include discard/immediate
+# Add "discard" to attribute #3 (interrupt="3")
+sed -i.bak 's/attributes #3 = { \(.*\) "interrupt"="\([0-9]*\)" \(.*\) }/attributes #3 = { \1 "discard" "interrupt"="\2" \3 }/' "$LLVM_IR"
+
+# Add "immediate" to attribute #4 (interrupt="4")
+sed -i.bak 's/attributes #4 = { \(.*\) "interrupt"="\([0-9]*\)" \(.*\) }/attributes #4 = { \1 "immediate" "interrupt"="\2" \3 }/' "$LLVM_IR"
+
+# Append attribute definitions for non-ISR functions
 echo '' >> "$LLVM_IR"
 echo 'attributes #99 = { "discard" }' >> "$LLVM_IR"
 echo 'attributes #98 = { "immediate" }' >> "$LLVM_IR"
 
 echo -e "${GREEN}✓ Added 'discard' attribute (#99) to discard functions${NC}"
 echo -e "${GREEN}✓ Added 'immediate' attribute (#98) to immediate functions${NC}"
+echo -e "${GREEN}✓ Updated ISR attributes${NC}"
 echo ""
 
 # Check if pass library exists
@@ -251,9 +268,13 @@ check_epilogue() {
 
     echo -n "  → Checking epilogue for $func_name: "
 
-    # Look for ADD #4, SP before return
-    if grep -A 20 "^${func_name}:" "$ASM_FILE" | grep -B 1 "ret" | grep -q "add.*#4.*r1\|add.*#4.*sp"; then
-        echo -e "${GREEN}✓ Epilogue cleanup found (ADD #4, SP)${NC}"
+    # Look for ADD #6, SP before return (non-interrupt) or ADD #4, SP (interrupt)
+    # Use -A 50 to handle longer functions with multiple basic blocks
+    if grep -A 50 "^${func_name}:" "$ASM_FILE" | grep -B 1 "ret\|reti" | grep -q "add.*#6.*r1\|add.*#6.*sp"; then
+        echo -e "${GREEN}✓ Epilogue cleanup found (ADD #6, SP)${NC}"
+        return 0
+    elif grep -A 50 "^${func_name}:" "$ASM_FILE" | grep -B 1 "ret\|reti" | grep -q "add.*#4.*r1\|add.*#4.*sp"; then
+        echo -e "${GREEN}✓ Epilogue cleanup found (ADD #4, SP for interrupt)${NC}"
         return 0
     else
         echo -e "${RED}✗ Epilogue cleanup NOT found${NC}"
@@ -308,6 +329,65 @@ echo -e "${YELLOW}Mixed Function Calls:${NC}"
 check_boundary "normal_calls_discard" "48879" "normal" && ((PASSED++)) || ((FAILED++))
 check_boundary "discard_calls_immediate" "57005" "discard" && ((PASSED++)) || ((FAILED++))
 check_boundary "immediate_calls_normal" "51966" "immediate" && ((PASSED++)) || ((FAILED++))
+echo ""
+
+# Test Interrupt Functions (should have NO padding, ADD #4 SP)
+echo -e "${YELLOW}Interrupt Functions (Boundary markers, no padding, ADD #4):${NC}"
+echo -n "Checking isr_normal (interrupt): "
+if check_boundary "isr_normal" "48879" "interrupt"; then
+    # Check for NO padding (should NOT have PUSH #0 before boundary)
+    if ! grep -A 5 "^isr_normal:" "$ASM_FILE" | head -6 | grep -q "push.*#0"; then
+        echo -e "  ${GREEN}✓ No padding found${NC}"
+    else
+        echo -e "  ${RED}✗ Unexpected padding found${NC}"
+    fi
+    # Check for ADD #4, not #6
+    if grep -A 20 "^isr_normal:" "$ASM_FILE" | grep -B 1 "reti" | grep -q "add.*#4.*r1\|add.*#4.*sp"; then
+        echo -e "  ${GREEN}✓ Epilogue cleanup found (ADD #4, SP)${NC}"
+        ((PASSED++))
+    else
+        echo -e "  ${RED}✗ Wrong epilogue cleanup${NC}"
+        ((FAILED++))
+    fi
+else
+    ((FAILED++))
+fi
+
+echo -n "Checking isr_discard (interrupt+discard): "
+if check_boundary "isr_discard" "57005" "interrupt+discard"; then
+    if ! grep -A 5 "^isr_discard:" "$ASM_FILE" | head -6 | grep -q "push.*#0"; then
+        echo -e "  ${GREEN}✓ No padding found${NC}"
+    else
+        echo -e "  ${RED}✗ Unexpected padding found${NC}"
+    fi
+    if grep -A 20 "^isr_discard:" "$ASM_FILE" | grep -B 1 "reti" | grep -q "add.*#4.*r1\|add.*#4.*sp"; then
+        echo -e "  ${GREEN}✓ Epilogue cleanup found (ADD #4, SP)${NC}"
+        ((PASSED++))
+    else
+        echo -e "  ${RED}✗ Wrong epilogue cleanup${NC}"
+        ((FAILED++))
+    fi
+else
+    ((FAILED++))
+fi
+
+echo -n "Checking isr_immediate (interrupt+immediate): "
+if check_boundary "isr_immediate" "51966" "interrupt+immediate"; then
+    if ! grep -A 5 "^isr_immediate:" "$ASM_FILE" | head -6 | grep -q "push.*#0"; then
+        echo -e "  ${GREEN}✓ No padding found${NC}"
+    else
+        echo -e "  ${RED}✗ Unexpected padding found${NC}"
+    fi
+    if grep -A 20 "^isr_immediate:" "$ASM_FILE" | grep -B 1 "reti" | grep -q "add.*#4.*r1\|add.*#4.*sp"; then
+        echo -e "  ${GREEN}✓ Epilogue cleanup found (ADD #4, SP)${NC}"
+        ((PASSED++))
+    else
+        echo -e "  ${RED}✗ Wrong epilogue cleanup${NC}"
+        ((FAILED++))
+    fi
+else
+    ((FAILED++))
+fi
 echo ""
 
 # Summary

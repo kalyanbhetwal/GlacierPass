@@ -4,175 +4,232 @@ test_prologue_boundary.o:	file format elf32-msp430
 Disassembly of section .text:
 
 00000000 <normal_no_locals>:
-       0: 30 12 ef be  	push	#48879
-       4: 23 12        	push	#2
-       6: 0a 12        	push	r10
-       8: 0b 4d        	mov	r13, r11
-       a: 0a 4c        	mov	r12, r10
-       c: 0a 5b        	add	r11, r10
-       e: 0c 4a        	mov	r10, r12
-      10: 3a 41        	pop	r10
-      12: 21 52        	add	#4, r1
-      14: 30 41        	ret
+       0: 03 12        	push	r3
+       2: 30 12 ef be  	push	#48879
+       6: 23 12        	push	#2
+       8: 0a 12        	push	r10
+       a: 0b 4d        	mov	r13, r11
+       c: 0a 4c        	mov	r12, r10
+       e: 0a 5b        	add	r11, r10
+      10: 0c 4a        	mov	r10, r12
+      12: 3a 41        	pop	r10
+      14: 31 50 06 00  	add	#6, r1
+      18: 30 41        	ret
 
-00000016 <normal_with_small_locals>:
-      16: 30 12 ef be  	push	#48879
-      1a: 23 12        	push	#2
-      1c: 0a 12        	push	r10
-      1e: 0b 4d        	mov	r13, r11
-      20: 0a 4c        	mov	r12, r10
-      22: 0c 4b        	mov	r11, r12
-      24: 3d 40 03 00  	mov	#3, r13
-      28: b0 12 00 00  	call	#0
-      2c: 0b 4c        	mov	r12, r11
-      2e: 0a 5a        	add	r10, r10
-      30: 0b 5a        	add	r10, r11
-      32: 0c 4b        	mov	r11, r12
-      34: 3a 41        	pop	r10
-      36: 21 52        	add	#4, r1
-      38: 30 41        	ret
+0000001a <normal_with_small_locals>:
+      1a: 03 12        	push	r3
+      1c: 30 12 ef be  	push	#48879
+      20: 23 12        	push	#2
+      22: 0a 12        	push	r10
+      24: 0b 4d        	mov	r13, r11
+      26: 0a 4c        	mov	r12, r10
+      28: 0c 4b        	mov	r11, r12
+      2a: 3d 40 03 00  	mov	#3, r13
+      2e: b0 12 00 00  	call	#0
+      32: 0b 4c        	mov	r12, r11
+      34: 0a 5a        	add	r10, r10
+      36: 0b 5a        	add	r10, r11
+      38: 0c 4b        	mov	r11, r12
+      3a: 3a 41        	pop	r10
+      3c: 31 50 06 00  	add	#6, r1
+      40: 30 41        	ret
 
-0000003a <normal_with_large_locals>:
-      3a: 30 12 ef be  	push	#48879
-      3e: 23 12        	push	#2
-      40: 0a 12        	push	r10
-      42: 0b 4d        	mov	r13, r11
-      44: 0a 4c        	mov	r12, r10
-      46: 0a 5b        	add	r11, r10
-      48: 3a 50 05 00  	add	#5, r10
-      4c: 0c 4a        	mov	r10, r12
-      4e: 3a 41        	pop	r10
-      50: 21 52        	add	#4, r1
-      52: 30 41        	ret
+00000042 <normal_with_large_locals>:
+      42: 03 12        	push	r3
+      44: 30 12 ef be  	push	#48879
+      48: 23 12        	push	#2
+      4a: 0a 12        	push	r10
+      4c: 0b 4d        	mov	r13, r11
+      4e: 0a 4c        	mov	r12, r10
+      50: 0a 5b        	add	r11, r10
+      52: 3a 50 05 00  	add	#5, r10
+      56: 0c 4a        	mov	r10, r12
+      58: 3a 41        	pop	r10
+      5a: 31 50 06 00  	add	#6, r1
+      5e: 30 41        	ret
 
-00000054 <normal_with_call>:
-      54: 30 12 ef be  	push	#48879
-      58: 23 12        	push	#2
-      5a: 0a 12        	push	r10
-      5c: 0b 4d        	mov	r13, r11
-      5e: 0a 4c        	mov	r12, r10
-      60: 0a 5b        	add	r11, r10
-      62: 3a 50 0a 00  	add	#10, r10
-      66: 0c 4a        	mov	r10, r12
-      68: 3a 41        	pop	r10
-      6a: 21 52        	add	#4, r1
-      6c: 30 41        	ret
+00000060 <normal_with_call>:
+      60: 03 12        	push	r3
+      62: 30 12 ef be  	push	#48879
+      66: 23 12        	push	#2
+      68: 0a 12        	push	r10
+      6a: 0b 4d        	mov	r13, r11
+      6c: 0a 4c        	mov	r12, r10
+      6e: 0a 5b        	add	r11, r10
+      70: 3a 50 0a 00  	add	#10, r10
+      74: 0c 4a        	mov	r10, r12
+      76: 3a 41        	pop	r10
+      78: 31 50 06 00  	add	#6, r1
+      7c: 30 41        	ret
 
-0000006e <discard_no_locals>:
-      6e: 30 12 ad de  	push	#57005
-      72: 03 12        	push	r3
-      74: 0c 5d        	add	r13, r12
-      76: 21 52        	add	#4, r1
-      78: 30 41        	ret
+0000007e <discard_no_locals>:
+      7e: 03 12        	push	r3
+      80: 30 12 ad de  	push	#57005
+      84: 03 12        	push	r3
+      86: 0c 5d        	add	r13, r12
+      88: 31 50 06 00  	add	#6, r1
+      8c: 30 41        	ret
 
-0000007a <discard_with_locals>:
-      7a: 30 12 ad de  	push	#57005
-      7e: 23 12        	push	#2
-      80: 21 83        	decd	r1
-      82: 81 4c 00 00  	mov	r12, 0(r1)
-      86: 0c 4d        	mov	r13, r12
-      88: 3d 40 03 00  	mov	#3, r13
-      8c: b0 12 00 00  	call	#0
-      90: 1d 41 00 00  	mov	0(r1), r13
-      94: 0d 5d        	add	r13, r13
-      96: 81 4d 00 00  	mov	r13, 0(r1)
-      9a: 1d 41 00 00  	mov	0(r1), r13
-      9e: 0c 5d        	add	r13, r12
-      a0: 21 53        	incd	r1
-      a2: 21 52        	add	#4, r1
-      a4: 30 41        	ret
+0000008e <discard_with_locals>:
+      8e: 03 12        	push	r3
+      90: 30 12 ad de  	push	#57005
+      94: 23 12        	push	#2
+      96: 21 83        	decd	r1
+      98: 81 4c 00 00  	mov	r12, 0(r1)
+      9c: 0c 4d        	mov	r13, r12
+      9e: 3d 40 03 00  	mov	#3, r13
+      a2: b0 12 00 00  	call	#0
+      a6: 1d 41 00 00  	mov	0(r1), r13
+      aa: 0d 5d        	add	r13, r13
+      ac: 81 4d 00 00  	mov	r13, 0(r1)
+      b0: 1d 41 00 00  	mov	0(r1), r13
+      b4: 0c 5d        	add	r13, r12
+      b6: 21 53        	incd	r1
+      b8: 31 50 06 00  	add	#6, r1
+      bc: 30 41        	ret
 
-000000a6 <discard_with_array>:
-      a6: 30 12 ad de  	push	#57005
-      aa: 03 12        	push	r3
-      ac: 2c 53        	incd	r12
-      ae: 21 52        	add	#4, r1
-      b0: 30 41        	ret
+000000be <discard_with_array>:
+      be: 03 12        	push	r3
+      c0: 30 12 ad de  	push	#57005
+      c4: 03 12        	push	r3
+      c6: 2c 53        	incd	r12
+      c8: 31 50 06 00  	add	#6, r1
+      cc: 30 41        	ret
 
-000000b2 <immediate_no_locals>:
-      b2: 30 12 fe ca  	push	#51966
-      b6: 23 12        	push	#2
-      b8: 0a 12        	push	r10
-      ba: 0b 4d        	mov	r13, r11
-      bc: 0a 4c        	mov	r12, r10
-      be: 0a 8b        	sub	r11, r10
-      c0: 0c 4a        	mov	r10, r12
-      c2: 3a 41        	pop	r10
-      c4: 21 52        	add	#4, r1
-      c6: 30 41        	ret
+000000ce <immediate_no_locals>:
+      ce: 03 12        	push	r3
+      d0: 30 12 fe ca  	push	#51966
+      d4: 23 12        	push	#2
+      d6: 0a 12        	push	r10
+      d8: 0b 4d        	mov	r13, r11
+      da: 0a 4c        	mov	r12, r10
+      dc: 0a 8b        	sub	r11, r10
+      de: 0c 4a        	mov	r10, r12
+      e0: 3a 41        	pop	r10
+      e2: 31 50 06 00  	add	#6, r1
+      e6: 30 41        	ret
 
-000000c8 <immediate_with_locals>:
-      c8: 30 12 fe ca  	push	#51966
-      cc: 23 12        	push	#2
-      ce: 0a 12        	push	r10
-      d0: 0b 4d        	mov	r13, r11
-      d2: 0a 4c        	mov	r12, r10
-      d4: 0a 5a        	add	r10, r10
-      d6: 0b 11        	rra	r11
-      d8: 0a 5b        	add	r11, r10
-      da: 0c 4a        	mov	r10, r12
-      dc: 3a 41        	pop	r10
-      de: 21 52        	add	#4, r1
-      e0: 30 41        	ret
+000000e8 <immediate_with_locals>:
+      e8: 03 12        	push	r3
+      ea: 30 12 fe ca  	push	#51966
+      ee: 23 12        	push	#2
+      f0: 0a 12        	push	r10
+      f2: 0b 4d        	mov	r13, r11
+      f4: 0a 4c        	mov	r12, r10
+      f6: 0a 5a        	add	r10, r10
+      f8: 0b 11        	rra	r11
+      fa: 0a 5b        	add	r11, r10
+      fc: 0c 4a        	mov	r10, r12
+      fe: 3a 41        	pop	r10
+     100: 31 50 06 00  	add	#6, r1
+     104: 30 41        	ret
 
-000000e2 <immediate_with_array>:
-      e2: 30 12 fe ca  	push	#51966
-      e6: 03 12        	push	r3
-      e8: 3d 40 07 00  	mov	#7, r13
-      ec: b0 12 00 00  	call	#0
-      f0: 21 52        	add	#4, r1
-      f2: 30 41        	ret
+00000106 <immediate_with_array>:
+     106: 03 12        	push	r3
+     108: 30 12 fe ca  	push	#51966
+     10c: 03 12        	push	r3
+     10e: 3d 40 07 00  	mov	#7, r13
+     112: b0 12 00 00  	call	#0
+     116: 31 50 06 00  	add	#6, r1
+     11a: 30 41        	ret
 
-000000f4 <immediate_multiple_returns>:
-      f4: 30 12 fe ca  	push	#51966
-      f8: 22 12        	push	#4
-      fa: 09 12        	push	r9
-      fc: 0a 12        	push	r10
-      fe: 0b 4d        	mov	r13, r11
-     100: 09 4c        	mov	r12, r9
-     102: 09 9b        	cmp	r11, r9
-     104: 0a 4b        	mov	r11, r10
-     106: 01 38        	jl	$+4
-     108: 0a 43        	clr	r10
-     10a: 0b 99        	cmp	r9, r11
-     10c: 01 38        	jl	$+4
-     10e: 09 4a        	mov	r10, r9
-     110: 0c 49        	mov	r9, r12
-     112: 3a 41        	pop	r10
-     114: 39 41        	pop	r9
-     116: 21 52        	add	#4, r1
-     118: 30 41        	ret
+0000011c <immediate_multiple_returns>:
+     11c: 03 12        	push	r3
+     11e: 30 12 fe ca  	push	#51966
+     122: 22 12        	push	#4
+     124: 09 12        	push	r9
+     126: 0a 12        	push	r10
+     128: 0b 4d        	mov	r13, r11
+     12a: 09 4c        	mov	r12, r9
+     12c: 09 9b        	cmp	r11, r9
+     12e: 0a 4b        	mov	r11, r10
+     130: 01 38        	jl	$+4
+     132: 0a 43        	clr	r10
+     134: 0b 99        	cmp	r9, r11
+     136: 01 38        	jl	$+4
+     138: 09 4a        	mov	r10, r9
+     13a: 0c 49        	mov	r9, r12
+     13c: 3a 41        	pop	r10
+     13e: 39 41        	pop	r9
+     140: 31 50 06 00  	add	#6, r1
+     144: 30 41        	ret
 
-0000011a <normal_calls_discard>:
-     11a: 30 12 ef be  	push	#48879
-     11e: 03 12        	push	r3
-     120: 0b 4c        	mov	r12, r11
-     122: 0b 5b        	add	r11, r11
-     124: 1b d3        	bis	#1, r11
-     126: 0c 4b        	mov	r11, r12
-     128: 21 52        	add	#4, r1
-     12a: 30 41        	ret
+00000146 <normal_calls_discard>:
+     146: 03 12        	push	r3
+     148: 30 12 ef be  	push	#48879
+     14c: 03 12        	push	r3
+     14e: 0b 4c        	mov	r12, r11
+     150: 0b 5b        	add	r11, r11
+     152: 1b d3        	bis	#1, r11
+     154: 0c 4b        	mov	r11, r12
+     156: 31 50 06 00  	add	#6, r1
+     15a: 30 41        	ret
 
-0000012c <discard_calls_immediate>:
-     12c: 30 12 ad de  	push	#57005
-     130: 03 12        	push	r3
-     132: 1c 43        	mov	#1, r12
-     134: 21 52        	add	#4, r1
-     136: 30 41        	ret
+0000015c <discard_calls_immediate>:
+     15c: 03 12        	push	r3
+     15e: 30 12 ad de  	push	#57005
+     162: 03 12        	push	r3
+     164: 1c 43        	mov	#1, r12
+     166: 31 50 06 00  	add	#6, r1
+     16a: 30 41        	ret
 
-00000138 <immediate_calls_normal>:
-     138: 30 12 fe ca  	push	#51966
-     13c: 03 12        	push	r3
-     13e: 0b 4c        	mov	r12, r11
-     140: 0b 5b        	add	r11, r11
-     142: 2b 53        	incd	r11
-     144: 0c 4b        	mov	r11, r12
-     146: 21 52        	add	#4, r1
-     148: 30 41        	ret
+0000016c <immediate_calls_normal>:
+     16c: 03 12        	push	r3
+     16e: 30 12 fe ca  	push	#51966
+     172: 03 12        	push	r3
+     174: 0b 4c        	mov	r12, r11
+     176: 0b 5b        	add	r11, r11
+     178: 2b 53        	incd	r11
+     17a: 0c 4b        	mov	r11, r12
+     17c: 31 50 06 00  	add	#6, r1
+     180: 30 41        	ret
 
-0000014a <main>:
-     14a: 30 12 ef be  	push	#48879
-     14e: 03 12        	push	r3
-     150: 3c 40 af 01  	mov	#431, r12
-     154: 21 52        	add	#4, r1
-     156: 30 41        	ret
+00000182 <isr_normal>:
+     182: 30 12 ef be  	push	#48879
+     186: 23 12        	push	#2
+     188: 21 83        	decd	r1
+     18a: b1 40 2a 00 00 00    	mov	#42, 0(r1)
+     190: 21 53        	incd	r1
+     192: 21 52        	add	#4, r1
+     194: 00 13        	reti
+
+00000196 <isr_discard>:
+     196: 30 12 ad de  	push	#57005
+     19a: 23 12        	push	#2
+     19c: 21 83        	decd	r1
+     19e: b1 40 64 00 00 00    	mov	#100, 0(r1)
+     1a4: 21 53        	incd	r1
+     1a6: 21 52        	add	#4, r1
+     1a8: 00 13        	reti
+
+000001aa <isr_immediate>:
+     1aa: 30 12 fe ca  	push	#51966
+     1ae: 23 12        	push	#2
+     1b0: 21 83        	decd	r1
+     1b2: b1 40 c8 00 00 00    	mov	#200, 0(r1)
+     1b8: 21 53        	incd	r1
+     1ba: 21 52        	add	#4, r1
+     1bc: 00 13        	reti
+
+000001be <main>:
+     1be: 03 12        	push	r3
+     1c0: 30 12 ef be  	push	#48879
+     1c4: 03 12        	push	r3
+     1c6: 3c 40 af 01  	mov	#431, r12
+     1ca: 31 50 06 00  	add	#6, r1
+     1ce: 30 41        	ret
+
+Disassembly of section __interrupt_vector_2:
+
+00000000 <__interrupt_vector_2>:
+       0: 00 00        	<unknown>
+
+Disassembly of section __interrupt_vector_3:
+
+00000000 <__interrupt_vector_3>:
+       0: 00 00        	<unknown>
+
+Disassembly of section __interrupt_vector_4:
+
+00000000 <__interrupt_vector_4>:
+       0: 00 00        	<unknown>
