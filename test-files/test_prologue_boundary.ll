@@ -9,118 +9,103 @@ target triple = "msp430"
 @llvm.global.annotations = appending global [9 x { ptr, ptr, ptr, i32, ptr }] [{ ptr, ptr, ptr, i32, ptr } { ptr @discard_no_locals, ptr @.str, ptr @.str.1, i32 71, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_with_locals, ptr @.str, ptr @.str.1, i32 80, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_with_array, ptr @.str, ptr @.str.1, i32 92, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_no_locals, ptr @.str.2, ptr @.str.1, i32 109, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_with_locals, ptr @.str.2, ptr @.str.1, i32 118, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_with_array, ptr @.str.2, ptr @.str.1, i32 129, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_multiple_returns, ptr @.str.2, ptr @.str.1, i32 143, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @discard_calls_immediate, ptr @.str, ptr @.str.1, i32 170, ptr null }, { ptr, ptr, ptr, i32, ptr } { ptr @immediate_calls_normal, ptr @.str.2, ptr @.str.1, i32 179, ptr null }], section "llvm.metadata"
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @normal_no_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
-entry:
-  %add = add nsw i16 %b, %a
-  ret i16 %add
+define dso_local i16 @normal_no_locals(i16 noundef %0, i16 noundef %1) local_unnamed_addr #0 {
+  %3 = add nsw i16 %1, %0
+  ret i16 %3
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @normal_with_small_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
-entry:
-  %mul = shl nsw i16 %a, 1
-  %mul1 = mul nsw i16 %b, 3
-  %add = add nsw i16 %mul1, %mul
-  ret i16 %add
+define dso_local i16 @normal_with_small_locals(i16 noundef %0, i16 noundef %1) local_unnamed_addr #0 {
+  %3 = shl nsw i16 %0, 1
+  %4 = mul nsw i16 %1, 3
+  %5 = add nsw i16 %4, %3
+  ret i16 %5
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 -32763, -32768) i16 @normal_with_large_locals(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
-entry:
-  %add = add nsw i16 %b, %a
-  %add1.5 = add nsw i16 %add, 5
-  ret i16 %add1.5
+define dso_local i16 @normal_with_large_locals(i16 noundef %0, i16 noundef %1) local_unnamed_addr #0 {
+  %3 = add nsw i16 %1, %0
+  %4 = add nsw i16 %3, 5
+  ret i16 %4
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 -32758, -32768) i16 @normal_with_call(i16 noundef %a, i16 noundef %b) local_unnamed_addr #0 {
-entry:
-  %add.i = add i16 %a, 10
-  %add = add i16 %add.i, %b
-  ret i16 %add
+define dso_local range(i16 -32758, -32768) i16 @normal_with_call(i16 noundef %0, i16 noundef %1) local_unnamed_addr #0 {
+  %3 = add i16 %0, 10
+  %4 = add i16 %3, %1
+  ret i16 %4
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @discard_no_locals(i16 noundef %a, i16 noundef %b) #99 {
-entry:
-  %add = add nsw i16 %b, %a
-  ret i16 %add
+define dso_local i16 @discard_no_locals(i16 noundef %0, i16 noundef %1) #99 {
+  %3 = add nsw i16 %1, %0
+  ret i16 %3
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @discard_with_locals(i16 noundef %a, i16 noundef %b) #99 {
-entry:
-  %mul = shl nsw i16 %a, 1
-  %mul1 = mul nsw i16 %b, 3
-  %add = add nsw i16 %mul1, %mul
-  ret i16 %add
+define dso_local i16 @discard_with_locals(i16 noundef %0, i16 noundef %1) #99 {
+  %3 = shl nsw i16 %0, 1
+  %4 = mul nsw i16 %1, 3
+  %5 = add nsw i16 %4, %3
+  ret i16 %5
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 -32766, -32768) i16 @discard_with_array(i16 noundef %a) #99 {
-entry:
-  %add.2 = add nsw i16 %a, 2
-  ret i16 %add.2
+define dso_local i16 @discard_with_array(i16 noundef %0) #99 {
+  %2 = add nsw i16 %0, 2
+  ret i16 %2
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @immediate_no_locals(i16 noundef %a, i16 noundef %b) #98 {
-entry:
-  %sub = sub nsw i16 %a, %b
-  ret i16 %sub
+define dso_local i16 @immediate_no_locals(i16 noundef %0, i16 noundef %1) #98 {
+  %3 = sub nsw i16 %0, %1
+  ret i16 %3
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @immediate_with_locals(i16 noundef %a, i16 noundef %b) #98 {
-entry:
-  %shl = shl i16 %a, 1
-  %shr = ashr i16 %b, 1
-  %add = add nsw i16 %shr, %shl
-  ret i16 %add
+define dso_local i16 @immediate_with_locals(i16 noundef %0, i16 noundef %1) #98 {
+  %3 = shl i16 %0, 1
+  %4 = ashr i16 %1, 1
+  %5 = add nsw i16 %4, %3
+  ret i16 %5
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local i16 @immediate_with_array(i16 noundef %x) #98 {
-entry:
-  %mul.7 = mul nsw i16 %x, 7
-  ret i16 %mul.7
+define dso_local i16 @immediate_with_array(i16 noundef %0) #98 {
+  %2 = mul nsw i16 %0, 7
+  ret i16 %2
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 -32767, -32768) i16 @immediate_multiple_returns(i16 noundef %a, i16 noundef %b) #98 {
-entry:
-  %cmp = icmp sgt i16 %a, %b
-  %cmp1 = icmp slt i16 %a, %b
-  %b. = select i1 %cmp1, i16 %b, i16 0
-  %retval.0 = select i1 %cmp, i16 %a, i16 %b.
-  ret i16 %retval.0
+define dso_local noundef i16 @immediate_multiple_returns(i16 noundef %0, i16 noundef %1) #98 {
+  %3 = icmp sgt i16 %0, %1
+  %4 = icmp slt i16 %0, %1
+  %5 = select i1 %4, i16 %1, i16 0
+  %6 = select i1 %3, i16 %0, i16 %5
+  ret i16 %6
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 1, 0) i16 @normal_calls_discard(i16 noundef %a) local_unnamed_addr #0 {
-entry:
-  %reass.add = shl i16 %a, 1
-  %add.i = or disjoint i16 %reass.add, 1
-  ret i16 %add.i
+define dso_local i16 @normal_calls_discard(i16 noundef %0) local_unnamed_addr #0 {
+  %2 = shl i16 %0, 1
+  %3 = or disjoint i16 %2, 1
+  ret i16 %3
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local noundef i16 @discard_calls_immediate(i16 %a) #99 {
-entry:
+define dso_local noundef i16 @discard_calls_immediate(i16 %0) #99 {
   ret i16 1
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
-define dso_local range(i16 2, 1) i16 @immediate_calls_normal(i16 noundef %a) #98 {
-entry:
-  %reass.add = shl i16 %a, 1
-  %add.i = add i16 %reass.add, 2
-  ret i16 %add.i
+define dso_local noundef i16 @immediate_calls_normal(i16 noundef %0) #98 {
+  %2 = shl i16 %0, 1
+  %3 = add i16 %2, 2
+  ret i16 %3
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
 define dso_local noundef i16 @main() local_unnamed_addr #0 {
-entry:
   ret i16 431
 }
 
@@ -130,7 +115,7 @@ attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memor
 !llvm.ident = !{!1}
 
 !0 = !{i32 1, !"wchar_size", i32 2}
-!1 = !{!"clang version 22.0.0git (git@github.com:llvm/llvm-project.git 7e55a4c9937dfc2184636ad7f3c9f7eccfad6186)"}
+!1 = !{!"Apple clang version 17.0.0 (clang-1700.4.4.1)"}
 
 attributes #99 = { "discard" }
 attributes #98 = { "immediate" }

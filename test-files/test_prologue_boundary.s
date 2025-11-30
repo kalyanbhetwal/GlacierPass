@@ -4,7 +4,7 @@
 	.p2align	1
 	.type	normal_no_locals,@function
 normal_no_locals:                       ; @normal_no_locals
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#2
 	push	r10
@@ -22,7 +22,7 @@ normal_no_locals:                       ; @normal_no_locals
 	.p2align	1
 	.type	normal_with_small_locals,@function
 normal_with_small_locals:               ; @normal_with_small_locals
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#2
 	push	r10
@@ -45,7 +45,7 @@ normal_with_small_locals:               ; @normal_with_small_locals
 	.p2align	1
 	.type	normal_with_large_locals,@function
 normal_with_large_locals:               ; @normal_with_large_locals
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#2
 	push	r10
@@ -64,7 +64,7 @@ normal_with_large_locals:               ; @normal_with_large_locals
 	.p2align	1
 	.type	normal_with_call,@function
 normal_with_call:                       ; @normal_with_call
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#2
 	push	r10
@@ -84,7 +84,7 @@ normal_with_call:                       ; @normal_with_call
 	.type	discard_no_locals,@function
 discard_no_locals:                      ; @discard_no_locals
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#57005
 	push	#0
 	add	r13, r12
@@ -99,7 +99,7 @@ discard_no_locals:                      ; @discard_no_locals
 	.type	discard_with_locals,@function
 discard_with_locals:                    ; @discard_with_locals
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#57005
 	push	#2
 	sub	#2, r1
@@ -126,7 +126,7 @@ discard_with_locals:                    ; @discard_with_locals
 	.type	discard_with_array,@function
 discard_with_array:                     ; @discard_with_array
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#57005
 	push	#0
 	incd	r12
@@ -141,7 +141,7 @@ discard_with_array:                     ; @discard_with_array
 	.type	immediate_no_locals,@function
 immediate_no_locals:                    ; @immediate_no_locals
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#51966
 	push	#2
 	push	r10
@@ -165,7 +165,7 @@ immediate_no_locals:                    ; @immediate_no_locals
 	.type	immediate_with_locals,@function
 immediate_with_locals:                  ; @immediate_with_locals
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#51966
 	push	#2
 	push	r10
@@ -191,7 +191,7 @@ immediate_with_locals:                  ; @immediate_with_locals
 	.type	immediate_with_array,@function
 immediate_with_array:                   ; @immediate_with_array
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#51966
 	push	#0
 	mov	#7, r13
@@ -207,7 +207,7 @@ immediate_with_array:                   ; @immediate_with_array
 	.type	immediate_multiple_returns,@function
 immediate_multiple_returns:             ; @immediate_multiple_returns
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#51966
 	push	#4
 	push	r9
@@ -221,14 +221,14 @@ immediate_multiple_returns:             ; @immediate_multiple_returns
 	cmp	r11, r9
 	mov	r11, r10
 	jl	.LBB10_2
-; %bb.1:                                ; %entry
+; %bb.1:
 	clr	r10
-.LBB10_2:                               ; %entry
+.LBB10_2:
 	cmp	r9, r11
 	jl	.LBB10_4
-; %bb.3:                                ; %entry
+; %bb.3:
 	mov	r10, r9
-.LBB10_4:                               ; %entry
+.LBB10_4:
 	mov	r9, r12
 	pop	r10
 	.cfi_def_cfa_offset 4
@@ -246,7 +246,7 @@ immediate_multiple_returns:             ; @immediate_multiple_returns
 	.p2align	1
 	.type	normal_calls_discard,@function
 normal_calls_discard:                   ; @normal_calls_discard
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#0
 	mov	r12, r11
@@ -263,7 +263,7 @@ normal_calls_discard:                   ; @normal_calls_discard
 	.type	discard_calls_immediate,@function
 discard_calls_immediate:                ; @discard_calls_immediate
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#57005
 	push	#0
 	mov	#1, r12
@@ -278,7 +278,7 @@ discard_calls_immediate:                ; @discard_calls_immediate
 	.type	immediate_calls_normal,@function
 immediate_calls_normal:                 ; @immediate_calls_normal
 	.cfi_startproc
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#51966
 	push	#0
 	mov	r12, r11
@@ -295,7 +295,7 @@ immediate_calls_normal:                 ; @immediate_calls_normal
 	.p2align	1
 	.type	main,@function
 main:                                   ; @main
-; %bb.0:                                ; %entry
+; %bb.0:
 	push	#48879
 	push	#0
 	mov	#431, r12
@@ -304,5 +304,5 @@ main:                                   ; @main
 .Lfunc_end14:
 	.size	main, .Lfunc_end14-main
                                         ; -- End function
-	.ident	"clang version 22.0.0git (git@github.com:llvm/llvm-project.git 7e55a4c9937dfc2184636ad7f3c9f7eccfad6186)"
+	.ident	"Apple clang version 17.0.0 (clang-1700.4.4.1)"
 	.section	".note.GNU-stack","",@progbits

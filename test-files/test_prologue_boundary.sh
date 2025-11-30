@@ -32,7 +32,7 @@ fi
 
 # Step 1: Compile C to LLVM IR with optimization
 echo -e "${YELLOW}Step 1: Compiling C to LLVM IR with optimization...${NC}"
-clang -target msp430 -S -emit-llvm -O2 "$TEST_FILE" -o "$LLVM_IR"
+/usr/bin/clang -target msp430 -S -emit-llvm -O2 "$TEST_FILE" -o "$LLVM_IR"
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ LLVM IR generated successfully (optimized)${NC}"
 else
@@ -201,7 +201,7 @@ if [ -f "$OBJ_FILE" ]; then
 
     # Hex dump to verify boundary values in raw binary
     echo -e "${YELLOW}Hex dump of .text section (first 256 bytes):${NC}"
-    "${LLVM_PATH}/bin/llvm-objdump" -s -section=.text "$OBJ_FILE" | head -30
+    "${LLVM_PATH}/bin/llvm-objdump" -s --section=.text "$OBJ_FILE" | head -30
     echo ""
 fi
 
